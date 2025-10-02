@@ -2,7 +2,8 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     id("kotlin-parcelize")
-    id("kotlin-kapt")
+//    id("kotlin-kapt")
+    id("com.google.devtools.ksp")
 }
 
 android {
@@ -28,6 +29,13 @@ android {
             )
         }
     }
+
+    buildFeatures {
+        buildConfig = true
+        viewBinding = true
+        dataBinding = true
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
@@ -38,6 +46,7 @@ android {
 }
 
 dependencies {
+    implementation(libs.activity)
     // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -47,7 +56,8 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
-    implementation(libs.androidx.activity)
+//    implementation(libs.androidx.activity)
+    implementation("androidx.activity:activity:1.12.0-alpha09")
     implementation(libs.androidx.constraintlayout)
 
     // Architecture Components
@@ -60,7 +70,7 @@ dependencies {
     // Room Database
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
-    kapt(libs.androidx.room.compiler)
+    ksp(libs.androidx.room.compiler)
 
     // Coroutines - CRITICAL FOR .await() TO WORK
     implementation(libs.kotlinx.coroutines.android)
@@ -83,13 +93,13 @@ dependencies {
 
     // Image Loading
     implementation(libs.glide)
-    kapt(libs.glide.compiler)
+    ksp(libs.glide.compiler)
 
     // Data Storage
     implementation(libs.androidx.datastore.preferences)
 
     // Ads
-    implementation(libs.play.services.ads)
+//    implementation(libs.play.services.ads)
 
     // Responsive Design
     implementation(libs.sdp.android)

@@ -27,6 +27,7 @@ lottie = "6.5.2"
 admob = "23.5.0"
 sdpSsp = "1.1.1"
 akspermission = "1.1.0"
+activityVersion = "1.11.0"
 
 [libraries]
 # Core Android
@@ -88,6 +89,7 @@ akspermission-android = { group = "com.github.AkshayHarsoda", name = "AksPermiss
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+activity = { group = "androidx.activity", name = "activity", version.ref = "activityVersion" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
