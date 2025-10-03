@@ -7,7 +7,6 @@ import android.os.Build
 import androidx.room.Room
 import com.quick.voice.recorder.data.database.RecordingDatabase
 import com.quick.voice.recorder.data.repository.RecordingRepository
-import kotlin.jvm.java
 
 class VoiceRecorderApplication : Application() {
 
@@ -33,20 +32,25 @@ class VoiceRecorderApplication : Application() {
 
     private fun createNotificationChannels() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            // Recording channel
             val recordingChannel = NotificationChannel(
                 RECORDING_CHANNEL_ID,
                 "Recording Service",
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
-                description = "Shows recording status"
+                description = "Shows ongoing voice recording"
+                setShowBadge(false)
+                setSound(null, null)
             }
 
+            // Player channel
             val playerChannel = NotificationChannel(
                 PLAYER_CHANNEL_ID,
                 "Audio Player",
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
-                description = "Controls audio playback"
+                description = "Shows audio playback controls"
+                setShowBadge(false)
             }
 
             val notificationManager = getSystemService(NotificationManager::class.java)

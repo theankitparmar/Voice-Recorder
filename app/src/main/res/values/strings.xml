@@ -20,4 +20,60 @@
     <string name="discard">Discard</string>
     <string name="cancel">Cancel</string>
     <string name="ok">OK</string>
+
+        <string name="pause">Pause</string>
+        <string name="resume">Resume</string>
+        <string name="save">Save</string>
+        <string name="discard_confirmation">Are you sure you want to discard this recording?</string>
+        <string name="permissions_required">Permissions Required</string>
+        <string name="audio_permission_required">Audio recording permission is required to record voice notes.</string>
+        <string name="recording_paused">Recording Paused</string>
+        <string name="recording_in_progress">Recording in progress...</string>
+        <string name="ready_to_record">Ready to record</string>
+        <string name="recording_saved">Recording saved successfully</string>
+
+    <string name="audio_player">Audio Player</string>
+    <string name="file_size_format">Size: %s</string>
+    <string name="play_audio">Play audio</string>
+    <string name="pause_audio">Pause audio</string>
+    <string name="playing_audio">Playing audio…</string>
+    <string name="audio_paused">Audio paused</string>
+    <string name="player_channel_name">Audio Player</string>
+    <string name="player_channel_description">Shows audio playback controls</string>
+    <string name="playback_error">Playback error: %s</string>
+    <string name="no_recordings_found">No recordings found</string>
+    <string name="share_recording">Share Recording</string>
+    <string name="share_error">Unable to share recording</string>
+    <string name="rename_recording">Rename Recording</string>
+    <string name="delete_recording">Delete Recording</string>
+    <string name="delete_recording_confirmation">Delete \"%s\"?</string>
+    <string name="delete_all_recordings">Delete All Recordings</string>
+    <string name="delete_all_recordings_confirmation">Delete all recordings? This action cannot be undone.</string>
+    <string name="delete_all">Delete All</string>
+    <string name="play">Play</string>
+    <string name="share">Share</string>
+    <string name="rename">Rename</string>
+    <string name="delete">Delete</string>
+    <string name="rewind">Rewind</string>
+    <string name="forward">Forward</string>
+    <string name="stop">Stop</string>
+    <string name="sort">Sort</string>
+    <string name="search">search</string>
+    <string name="empty_recordings_subtitle">"empty_recordings_subtitle "</string>
+
+    <!-- Sorting -->
+    <string name="sort_recordings">Sort Recordings</string>
+    <string name="sort_by_date_newest">Date (Newest First)</string>
+    <string name="sort_by_date_oldest">Date (Oldest First)</string>
+    <string name="sort_by_name">Name (A-Z)</string>
+    <string name="sort_by_duration">Duration</string>
+
+    <!-- Empty state -->
+
+    <!-- Plural for recording count -->
+    <plurals name="recordings_count">
+        <item quantity="one">%d recording</item>
+        <item quantity="other">%d recordings</item>
+    </plurals>
+
 </resources>

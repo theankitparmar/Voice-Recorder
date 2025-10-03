@@ -105,6 +105,10 @@ dependencies {
     implementation(libs.sdp.android)
     implementation(libs.ssp.android)
 
+    //swiperefresh
+    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.2.0-alpha01")
+
+    implementation("androidx.media:media:1.6.0")
     // Permissions
     implementation(libs.akspermission.android)
 }

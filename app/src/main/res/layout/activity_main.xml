@@ -5,113 +5,234 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="24dp"
+    android:background="@color/surface"
     tools:context=".ui.MainActivity">
 
+    <!-- Header Section -->
+    <TextView
+        android:id="@+id/tvAppTitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="Voice Recorder"
+        android:textColor="@color/on_surface"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:letterSpacing="0.02"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginBottom="32dp" />
+
+    <!-- Status Indicator -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardStatus"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="24dp"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="2dp"
+        app:cardBackgroundColor="@color/surface_container"
+        app:layout_constraintTop_toBottomOf="@id/tvAppTitle"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:padding="16dp">
+
+            <ImageView
+                android:id="@+id/ivStatusIndicator"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_marginEnd="12dp"
+                android:src="@drawable/ic_status_ready"
+                android:tint="@color/primary" />
+
+            <TextView
+                android:id="@+id/tvRecordingStatus"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Ready to record"
+                android:textColor="@color/on_surface"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Timer Card - Center Piece -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/cardTimer"
-        android:layout_width="200dp"
-        android:layout_height="200dp"
-        app:cardCornerRadius="100dp"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginBottom="48dp"
+        app:cardCornerRadius="24dp"
         app:cardElevation="8dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:cardBackgroundColor="@color/surface_container_high"
+        app:strokeColor="@color/outline"
+        app:strokeWidth="1dp"
+        app:layout_constraintTop_toBottomOf="@id/cardStatus"
+        app:layout_constraintBottom_toTopOf="@+id/btnStartRecording"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.3">
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintWidth_percent="0.7"
+        app:layout_constraintDimensionRatio="1:1">
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="match_parent"
+            android:padding="24dp">
+
+            <!-- Circular Progress Background -->
+            <com.google.android.material.progressindicator.CircularProgressIndicator
+                android:id="@+id/progressTimer"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:indeterminate="false"
+                android:progress="0"
+                app:trackColor="@color/surface_container"
+                app:trackThickness="8dp"
+                app:indicatorColor="@color/primary"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintWidth_percent="0.8" />
 
             <TextView
                 android:id="@+id/tvTimer"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="00:00"
-                android:textSize="32sp"
+                android:textColor="@color/primary"
+                android:textSize="42sp"
                 android:textStyle="bold"
+                android:letterSpacing="0.05"
+                android:fontFamily="monospace"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
+            <TextView
+                android:id="@+id/tvTimerLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Recording Time"
+                android:textColor="@color/on_surface_variant"
+                android:textSize="14sp"
+                app:layout_constraintTop_toBottomOf="@id/tvTimer"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
+
         </androidx.constraintlayout.widget.ConstraintLayout>
 
     </com.google.android.material.card.MaterialCardView>
 
+    <!-- Main Action Button -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnStartRecording"
         android:layout_width="0dp"
         android:layout_height="60dp"
-        android:layout_marginTop="48dp"
         android:text="Start Recording"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:letterSpacing="0.01"
         app:icon="@drawable/ic_mic"
         app:iconGravity="textStart"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:iconPadding="12dp"
+        app:cornerRadius="16dp"
+        app:backgroundTint="@color/primary"
+        android:textColor="@color/on_primary"
+        app:layout_constraintTop_toBottomOf="@id/cardTimer"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/cardTimer" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/layoutRecordingControls"
+        android:layout_marginBottom="16dp" />
 
-
+    <!-- Recording Controls -->
     <LinearLayout
         android:id="@+id/layoutRecordingControls"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="48dp"
         android:orientation="horizontal"
+        android:gravity="center"
         android:visibility="gone"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btnStartRecording"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/cardTimer">
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/btnViewRecordings"
+        android:layout_marginBottom="24dp">
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnPauseResume"
             style="@style/Widget.Material3.Button.OutlinedButton"
             android:layout_width="0dp"
-            android:layout_height="60dp"
+            android:layout_height="56dp"
             android:layout_marginEnd="8dp"
             android:layout_weight="1"
             android:text="Pause"
-            app:icon="@drawable/ic_pause" />
+            android:textSize="14sp"
+            app:icon="@drawable/ic_pause"
+            app:iconPadding="8dp"
+            app:cornerRadius="12dp"
+            app:strokeColor="@color/outline"
+            app:strokeWidth="1dp" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnDiscard"
             style="@style/Widget.Material3.Button.OutlinedButton"
             android:layout_width="0dp"
-            android:layout_height="60dp"
+            android:layout_height="56dp"
             android:layout_marginHorizontal="4dp"
             android:layout_weight="1"
             android:text="Discard"
-            app:icon="@drawable/ic_delete" />
+            android:textSize="14sp"
+            app:icon="@drawable/ic_delete"
+            app:iconPadding="8dp"
+            app:cornerRadius="12dp"
+            app:strokeColor="@color/error"
+            app:iconTint="@color/error"
+            android:textColor="@color/error" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnSave"
             android:layout_width="0dp"
-            android:layout_height="60dp"
+            android:layout_height="56dp"
             android:layout_marginStart="8dp"
             android:layout_weight="1"
             android:text="Save"
-            app:icon="@drawable/ic_save" />
+            android:textSize="14sp"
+            android:textStyle="bold"
+            app:icon="@drawable/ic_save"
+            app:iconPadding="8dp"
+            app:cornerRadius="12dp"
+            app:backgroundTint="@color/secondary"
+            android:textColor="@color/on_secondary" />
 
     </LinearLayout>
 
-    <!-- Update the Group to reference the LinearLayout -->
-    <androidx.constraintlayout.widget.Group
-        android:id="@+id/groupRecordingControls"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:visibility="gone"
-        app:constraint_referenced_ids="layoutRecordingControls" />
-
+    <!-- Secondary Action -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnViewRecordings"
         style="@style/Widget.Material3.Button.OutlinedButton"
         android:layout_width="0dp"
-        android:layout_height="60dp"
-        android:layout_marginTop="24dp"
+        android:layout_height="56dp"
         android:text="View Recordings"
+        android:textSize="16sp"
         app:icon="@drawable/ic_list"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:iconPadding="8dp"
+        app:cornerRadius="16dp"
+        app:strokeColor="@color/outline"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btnStartRecording" />
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginBottom="16dp" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

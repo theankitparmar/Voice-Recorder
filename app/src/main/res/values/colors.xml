@@ -2,4 +2,41 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <!-- Player Activity Colors -->
+    <color name="player_background">#1A1A1A</color>
+    <color name="player_card_background">#2D2D2D</color>
+    <color name="player_text_secondary">#B3B3B3</color>
+    <color name="player_control_stroke">#404040</color>
+    <color name="player_seekbar_background">#404040</color>
+
+    <!-- Common Colors -->
+    <color name="card_stroke">#1F000000</color>
+    <color name="icon_background_start">#FF6B8E</color>
+    <color name="icon_background_end">#FF8E6B</color>
+    <color name="error_color">#F44336</color>
+    <color name="colorPrimary">#273666</color>
+    <color name="colorAccent">#56dfdfdf</color>
+    <color name="colorPrimaryDark">#af3444</color>
+
+    <!-- Item background colors -->
+    <color name="item_background_even">#FAFAFA</color>
+    <color name="item_background_odd">#FFFFFF</color>
+
+    <!-- Additional colors -->
+    <color name="chip_background">#1A1A1A</color>
+    <color name="waveform_color">#4CAF50</color>
+    <color name="waveform_background">#F8F6877F</color>
+    <color name="waveform_preview_color">#ff6300</color>
+
+    <color name="primary">#6750A4</color>
+    <color name="on_primary">#FFFFFF</color>
+    <color name="secondary">#E8DEF8</color>
+    <color name="on_secondary">#1D192B</color>
+    <color name="surface">#FFFBFE</color>
+    <color name="on_surface">#1C1B1F</color>
+    <color name="on_surface_variant">#49454F</color>
+    <color name="surface_container">#F3EDF7</color>
+    <color name="surface_container_high">#ECE6F0</color>
+    <color name="outline">#79747E</color>
+    <color name="error">#BA1A1A</color>
 </resources>

@@ -13,12 +13,30 @@ interface RecordingDao {
     @Query("SELECT * FROM recordings WHERE id = :id")
     suspend fun getRecordingById(id: Long): Recording?
     
-    @Insert
-    suspend fun insertRecording(recording: Recording): Long
-    
     @Delete
     suspend fun deleteRecording(recording: Recording)
     
     @Query("DELETE FROM recordings WHERE id = :id")
     suspend fun deleteRecordingById(id: Long)
+
+    @Query("DELETE FROM recordings")
+    fun deleteAllRecordings()
+
+    @Update
+    fun updateRecording(updatedRecording: Recording)
+
+    @Query("SELECT * FROM recordings WHERE fileName LIKE :query OR filePath LIKE :query")
+    suspend fun searchRecordings(query: String): List<Recording>
+
+
+//    @Query("SELECT * FROM recordings ORDER BY createdDate DESC")
+//    fun getAllRecordings(): LiveData<List<Recording>>
+
+//    @Query("SELECT * FROM recordings WHERE id = :id")
+//    suspend fun getRecordingById(id: Long): Recording?
+
+    @Insert
+    suspend fun insertRecording(recording: Recording): Long
 }
+
+

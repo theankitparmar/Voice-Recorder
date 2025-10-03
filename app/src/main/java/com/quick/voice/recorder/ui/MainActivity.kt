@@ -21,7 +21,7 @@ import com.quick.voice.recorder.VoiceRecorderApplication
 import com.quick.voice.recorder.databinding.ActivityMainBinding
 import com.quick.voice.recorder.service.RecordingService
 import com.quick.voice.recorder.utils.FileUtils
-import com.quick.voice.recorder.utils.formatDuration
+import com.quick.voice.recorder.utils.FileUtils.formatDuration
 import com.quick.voice.recorder.viewmodel.MainViewModel
 import com.quick.voice.recorder.viewmodel.MainViewModelFactory
 
@@ -36,13 +36,20 @@ class MainActivity : AppCompatActivity() {
     private var isServiceBound = false
     private val handler = Handler(Looper.getMainLooper())
     private var timerRunnable: Runnable? = null
+    private var isRecording = false
+    private var isPaused = false
 
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             val binder = service as RecordingService.RecordingBinder
             recordingService = binder.getService()
             isServiceBound = true
-            updateUIState()
+
+            // Update UI based on current service state
+            updateUIFromServiceState()
+            if (recordingService?.isCurrentlyRecording() == true) {
+                startTimer()
+            }
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
@@ -62,21 +69,21 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // Call this in onCreate after setupUI()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         setupUI()
-        requestAllPermissions() // Add this line
+        bindRecordingService()
+        requestAllPermissions()
     }
 
     private fun setupUI() {
         binding.apply {
             btnStartRecording.setOnClickListener {
-                if (recordingService?.isCurrentlyRecording() == true) {
-                    // Recording is active, show recording controls
+                if (isRecording) {
+                    // If already recording, show controls
                     return@setOnClickListener
                 }
                 checkPermissionsAndStartRecording()
@@ -98,33 +105,34 @@ class MainActivity : AppCompatActivity() {
                 startActivity(Intent(this@MainActivity, RecordingsActivity::class.java))
             }
         }
-
         updateUIState()
     }
 
-    private fun requestNotificationPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.POST_NOTIFICATIONS
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                permissionLauncher.launch(arrayOf(Manifest.permission.POST_NOTIFICATIONS))
+    private fun bindRecordingService() {
+        val intent = Intent(this, RecordingService::class.java)
+        bindService(intent, serviceConnection, BIND_AUTO_CREATE)
+    }
+
+    private fun updateUIFromServiceState() {
+        recordingService?.let { service ->
+            isRecording = service.isCurrentlyRecording()
+            isPaused = service.isCurrentlyPaused()
+
+            if (isRecording && timerRunnable == null) {
+                startTimer()
             }
+            updateUIState()
         }
     }
 
-    // Update the checkPermissionsAndStartRecording method in MainActivity.kt
     private fun checkPermissionsAndStartRecording() {
         val permissions = mutableListOf<String>()
 
-        // Check microphone permission
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
             != PackageManager.PERMISSION_GRANTED) {
             permissions.add(Manifest.permission.RECORD_AUDIO)
         }
 
-        // Check storage permission for older Android versions
         if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -132,7 +140,13 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Check foreground service microphone permission for Android 14+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED) {
+                permissions.add(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.FOREGROUND_SERVICE_MICROPHONE)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -147,17 +161,14 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // Add this to MainActivity.kt
     private fun requestAllPermissions() {
         val permissions = mutableListOf<String>()
 
-        // Always needed permissions
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
             != PackageManager.PERMISSION_GRANTED) {
             permissions.add(Manifest.permission.RECORD_AUDIO)
         }
 
-        // Storage permission for older versions
         if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -165,7 +176,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Notification permission for Android 13+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -173,7 +183,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Foreground service microphone permission for Android 14+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.FOREGROUND_SERVICE_MICROPHONE)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -187,34 +196,31 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startRecording() {
-        val intent = Intent(this, RecordingService::class.java)
+        val outputFile = FileUtils.createAudioFile(this)
+        val intent = Intent(this, RecordingService::class.java).apply {
+            putExtra(RecordingService.EXTRA_OUTPUT_FILE, outputFile.absolutePath)
+        }
 
-        // Use appropriate start method depending on API level
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             startForegroundService(intent)
         } else {
             startService(intent)
         }
 
-        bindService(intent, serviceConnection, BIND_AUTO_CREATE)
-
-        // Wait a moment for service to bind, then start recording
+        // Wait a moment for service to start, then update UI
         handler.postDelayed({
-            val outputFile = FileUtils.createAudioFile(this)
-            if (recordingService?.startRecording(outputFile.absolutePath) == true) {
-                startTimer()
-                updateUIState()
-            }
+            updateUIFromServiceState()
         }, 100)
     }
-
 
     private fun togglePauseResume() {
         recordingService?.let { service ->
             if (service.isCurrentlyPaused()) {
                 service.resumeRecording()
+                isPaused = false
             } else {
                 service.pauseRecording()
+                isPaused = true
             }
             updateUIState()
         }
@@ -222,15 +228,16 @@ class MainActivity : AppCompatActivity() {
 
     private fun discardRecording() {
         MaterialAlertDialogBuilder(this)
-            .setTitle("Discard Recording")
-            .setMessage("Are you sure you want to discard this recording?")
-            .setPositiveButton("Discard") { _, _ ->
+            .setTitle(getString(R.string.discard_recording))
+            .setMessage(getString(R.string.discard_confirmation))
+            .setPositiveButton(getString(R.string.discard)) { _, _ ->
                 recordingService?.discardRecording()
                 stopTimer()
-                unbindServiceIfBound()
+                isRecording = false
+                isPaused = false
                 updateUIState()
             }
-            .setNegativeButton("Cancel", null)
+            .setNegativeButton(getString(R.string.cancel), null)
             .show()
     }
 
@@ -240,13 +247,22 @@ class MainActivity : AppCompatActivity() {
             if (filePath != null) {
                 viewModel.saveRecording(filePath, service.getCurrentDuration())
                 stopTimer()
-                unbindServiceIfBound()
+                isRecording = false
+                isPaused = false
                 updateUIState()
+
+                // Show success message
+                com.google.android.material.snackbar.Snackbar.make(
+                    binding.root,
+                    getString(R.string.recording_saved),
+                    com.google.android.material.snackbar.Snackbar.LENGTH_SHORT
+                ).show()
             }
         }
     }
 
     private fun startTimer() {
+        stopTimer() // Ensure no existing timer
         timerRunnable = object : Runnable {
             override fun run() {
                 recordingService?.let { service ->
@@ -266,43 +282,48 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateUIState() {
-        val isRecording = recordingService?.isCurrentlyRecording() ?: false
-        val isPaused = recordingService?.isCurrentlyPaused() ?: false
-
         binding.apply {
             // Show/hide recording controls
-            layoutRecordingControls.visibility = if (isRecording)
-                android.view.View.VISIBLE else android.view.View.GONE
-            btnStartRecording.visibility = if (isRecording)
-                android.view.View.GONE else android.view.View.VISIBLE
+            layoutRecordingControls.visibility = if (isRecording) View.VISIBLE else View.GONE
+            btnStartRecording.visibility = if (isRecording) View.GONE else View.VISIBLE
 
             // Update pause/resume button
-            btnPauseResume.text = if (isPaused) "Resume" else "Pause"
-            btnPauseResume.setIconResource(
-                if (isPaused) R.drawable.ic_play else R.drawable.ic_pause
-            )
-        }
-    }
+            val pauseResumeText = if (isPaused) getString(R.string.resume) else getString(R.string.pause)
+            val pauseResumeIcon = if (isPaused) R.drawable.ic_play else R.drawable.ic_pause
 
+            btnPauseResume.text = pauseResumeText
+            btnPauseResume.setIconResource(pauseResumeIcon)
 
-    private fun unbindServiceIfBound() {
-        if (isServiceBound) {
-            unbindService(serviceConnection)
-            isServiceBound = false
+            // Update recording status text
+            val statusText = when {
+                isPaused -> getString(R.string.recording_paused)
+                isRecording -> getString(R.string.recording_in_progress)
+                else -> getString(R.string.ready_to_record)
+            }
+            tvRecordingStatus.text = statusText
         }
     }
 
     private fun showPermissionDeniedDialog() {
         MaterialAlertDialogBuilder(this)
-            .setTitle("Permissions Required")
-            .setMessage("Audio recording permission is required to record voice notes.")
-            .setPositiveButton("OK", null)
+            .setTitle(getString(R.string.permissions_required))
+            .setMessage(getString(R.string.audio_permission_required))
+            .setPositiveButton(getString(R.string.ok), null)
             .show()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Update UI state when returning to the app
+        updateUIFromServiceState()
     }
 
     override fun onDestroy() {
         super.onDestroy()
         stopTimer()
-        unbindServiceIfBound()
+        if (isServiceBound) {
+            unbindService(serviceConnection)
+            isServiceBound = false
+        }
     }
 }
