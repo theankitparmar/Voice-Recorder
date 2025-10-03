@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+    <resources>
+        <!-- WaveformPreviewView attributes -->
+        <declare-styleable name="WaveformPreviewView">
+            <attr name="waveformColor" format="color|reference" />
+            <attr name="waveformBackgroundColor" format="color|reference" />
+            <attr name="waveformCornerRadius" format="dimension" />
+        </declare-styleable>
+
+        <!-- WaveformView attributes -->
+        <declare-styleable name="WaveformView">
+            <attr name="waveformColo2" format="color|reference" />
+            <attr name="waveformProgressColor" format="color|reference" />
+            <attr name="waveformBackgroundColor2" format="color|reference" />
+            <attr name="waveformCornerRadius2" format="dimension" />
+            <attr name="showProgress" format="boolean" />
+        </declare-styleable>
+    </resources>
