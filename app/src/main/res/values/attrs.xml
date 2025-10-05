@@ -7,12 +7,45 @@
             <attr name="waveformCornerRadius" format="dimension" />
         </declare-styleable>
 
-        <!-- WaveformView attributes -->
+<!--        &lt;!&ndash; WaveformView attributes &ndash;&gt;-->
+<!--        <declare-styleable name="WaveformView">-->
+<!--            <attr name="waveformColo2" format="color|reference" />-->
+<!--            <attr name="waveformProgressColor" format="color|reference" />-->
+<!--            <attr name="waveformBackgroundColor2" format="color|reference" />-->
+<!--            <attr name="waveformCornerRadius2" format="dimension" />-->
+<!--            <attr name="showProgress" format="boolean" />-->
+<!--        </declare-styleable>-->
         <declare-styleable name="WaveformView">
-            <attr name="waveformColo2" format="color|reference" />
-            <attr name="waveformProgressColor" format="color|reference" />
-            <attr name="waveformBackgroundColor2" format="color|reference" />
-            <attr name="waveformCornerRadius2" format="dimension" />
-            <attr name="showProgress" format="boolean" />
+            <attr name="chunkAlignTo2" format="enum">
+                <enum name="center" value="0" />
+                <enum name="bottom" value="1" />
+            </attr>
+            <attr name="chunkColor2" format="color" />
+            <attr name="chunkMaxHeight2" format="dimension" />
+            <attr name="chunkMinHeight2" format="dimension" />
+            <attr name="chunkRoundedCorners2" format="boolean" />
+            <attr name="chunkSoftTransition2" format="boolean" />
+            <attr name="chunkSpace2" format="dimension" />
+            <attr name="chunkWidth2" format="dimension" />
+            <attr name="direction" format="enum">
+                <enum name="leftToRight" value="0" />
+                <enum name="rightToLeft" value="1" />
+            </attr>
         </declare-styleable>
+
+    <declare-styleable name="WaveformView2">
+        <attr name="chunkWidth" format="dimension" />
+        <attr name="chunkSpace" format="dimension" />
+        <attr name="chunkMinHeight" format="dimension" />
+        <attr name="chunkMaxHeight" format="dimension" />
+        <attr name="chunkColor" format="color" />
+        <attr name="chunkRoundedCorners" format="boolean" />
+        <attr name="chunkAlignTo" format="enum">
+            <enum name="center" value="0" />
+            <enum name="bottom" value="1" />
+            <enum name="top" value="2" />
+        </attr>
+        <attr name="chunkSoftTransition" format="boolean" />
+    </declare-styleable>
     </resources>
+<!--    </resources>-->

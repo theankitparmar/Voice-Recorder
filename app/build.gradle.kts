@@ -111,4 +111,7 @@ dependencies {
     implementation("androidx.media:media:1.6.0")
     // Permissions
     implementation(libs.akspermission.android)
+
+// https://mvnrepository.com/artifact/com.github.lincollincol/compose-audiowaveform
+    implementation(libs.compose.audiowaveform)
 }

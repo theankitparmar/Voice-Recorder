@@ -65,7 +65,7 @@
             </com.google.android.material.card.MaterialCardView>
 
             <!-- Audio Visualization Waveform -->
-            <com.quick.voice.recorder.ui.view.WaveformView
+            <com.quick.voice.recorder.utils.WaveformView
                 android:id="@+id/waveformView"
                 android:layout_width="0dp"
                 android:layout_height="60dp"

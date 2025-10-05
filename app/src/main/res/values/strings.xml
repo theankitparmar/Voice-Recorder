@@ -21,16 +21,16 @@
     <string name="cancel">Cancel</string>
     <string name="ok">OK</string>
 
-        <string name="pause">Pause</string>
-        <string name="resume">Resume</string>
-        <string name="save">Save</string>
-        <string name="discard_confirmation">Are you sure you want to discard this recording?</string>
-        <string name="permissions_required">Permissions Required</string>
-        <string name="audio_permission_required">Audio recording permission is required to record voice notes.</string>
-        <string name="recording_paused">Recording Paused</string>
-        <string name="recording_in_progress">Recording in progress...</string>
-        <string name="ready_to_record">Ready to record</string>
-        <string name="recording_saved">Recording saved successfully</string>
+    <string name="pause">Pause</string>
+    <string name="resume">Resume</string>
+    <string name="save">Save</string>
+    <string name="discard_confirmation">Are you sure you want to discard this recording?</string>
+    <string name="permissions_required">Permissions Required</string>
+    <string name="audio_permission_required">Audio recording permission is required to record voice notes.</string>
+    <string name="recording_paused">Recording Paused</string>
+    <string name="recording_in_progress">Recording in progress...</string>
+    <string name="ready_to_record">Ready to record</string>
+    <string name="recording_saved">Recording saved successfully</string>
 
     <string name="audio_player">Audio Player</string>
     <string name="file_size_format">Size: %s</string>

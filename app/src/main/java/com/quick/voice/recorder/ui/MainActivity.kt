@@ -36,6 +36,7 @@ class MainActivity : AppCompatActivity() {
     private var isServiceBound = false
     private val handler = Handler(Looper.getMainLooper())
     private var timerRunnable: Runnable? = null
+    private var waveformUpdateRunnable: Runnable? = null
     private var isRecording = false
     private var isPaused = false
 
@@ -45,16 +46,17 @@ class MainActivity : AppCompatActivity() {
             recordingService = binder.getService()
             isServiceBound = true
 
-            // Update UI based on current service state
             updateUIFromServiceState()
             if (recordingService?.isCurrentlyRecording() == true) {
                 startTimer()
+                startWaveformUpdates()
             }
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
             recordingService = null
             isServiceBound = false
+            stopWaveformUpdates()
         }
     }
 
@@ -74,16 +76,36 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        setupWaveform()
         setupUI()
         bindRecordingService()
         requestAllPermissions()
+    }
+
+    private fun setupWaveform() {
+        binding.waveformView.apply {
+            // Enable scrolling mode with center line
+            setScrollingMode(false) // Start disabled, enable on recording
+
+            // Set center alignment
+            setAlignment(WaveformView2.WaveformAlignment.CENTER)
+
+            // Configure spike style
+            setSpikeStyle(
+                width = context.dpToPx(3),
+                padding = context.dpToPx(2),
+                radius = context.dpToPx(5)
+            )
+
+            // Enable dim overlay
+            setDimOverlay(enabled = true, height = context.dpToPx(25))
+        }
     }
 
     private fun setupUI() {
         binding.apply {
             btnStartRecording.setOnClickListener {
                 if (isRecording) {
-                    // If already recording, show controls
                     return@setOnClickListener
                 }
                 checkPermissionsAndStartRecording()
@@ -110,6 +132,11 @@ class MainActivity : AppCompatActivity() {
 
     private fun bindRecordingService() {
         val intent = Intent(this, RecordingService::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            ContextCompat.startForegroundService(this, intent)
+        } else {
+            startService(intent)
+        }
         bindService(intent, serviceConnection, BIND_AUTO_CREATE)
     }
 
@@ -207,9 +234,11 @@ class MainActivity : AppCompatActivity() {
             startService(intent)
         }
 
-        // Wait a moment for service to start, then update UI
         handler.postDelayed({
             updateUIFromServiceState()
+            binding.waveformView.recreate() // Clear previous data
+            binding.waveformView.setScrollingMode(true) // Enable scrolling with center line
+            startWaveformUpdates()
         }, 100)
     }
 
@@ -218,9 +247,11 @@ class MainActivity : AppCompatActivity() {
             if (service.isCurrentlyPaused()) {
                 service.resumeRecording()
                 isPaused = false
+                startWaveformUpdates() // Resume waveform updates
             } else {
                 service.pauseRecording()
                 isPaused = true
+                stopWaveformUpdates() // Pause waveform (freezes at last state)
             }
             updateUIState()
         }
@@ -233,6 +264,9 @@ class MainActivity : AppCompatActivity() {
             .setPositiveButton(getString(R.string.discard)) { _, _ ->
                 recordingService?.discardRecording()
                 stopTimer()
+                stopWaveformUpdates()
+                binding.waveformView.setScrollingMode(false) // Disable scrolling
+                binding.waveformView.recreate() // Clear waveform
                 isRecording = false
                 isPaused = false
                 updateUIState()
@@ -247,11 +281,13 @@ class MainActivity : AppCompatActivity() {
             if (filePath != null) {
                 viewModel.saveRecording(filePath, service.getCurrentDuration())
                 stopTimer()
+                stopWaveformUpdates()
+                binding.waveformView.setScrollingMode(false) // Disable scrolling
+                binding.waveformView.recreate() // Clear waveform
                 isRecording = false
                 isPaused = false
                 updateUIState()
 
-                // Show success message
                 com.google.android.material.snackbar.Snackbar.make(
                     binding.root,
                     getString(R.string.recording_saved),
@@ -262,7 +298,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startTimer() {
-        stopTimer() // Ensure no existing timer
+        stopTimer()
         timerRunnable = object : Runnable {
             override fun run() {
                 recordingService?.let { service ->
@@ -281,6 +317,26 @@ class MainActivity : AppCompatActivity() {
         binding.tvTimer.text = "00:00"
     }
 
+    private fun startWaveformUpdates() {
+        stopWaveformUpdates()
+        waveformUpdateRunnable = object : Runnable {
+            override fun run() {
+                recordingService?.let { service ->
+                    val amplitude = service.getCurrentAmplitude()
+                    // Update with gradient (no color parameter needed)
+                    binding.waveformView.update(amplitude)
+                    handler.postDelayed(this, 50) // Update every 50ms
+                }
+            }
+        }
+        handler.post(waveformUpdateRunnable!!)
+    }
+
+    private fun stopWaveformUpdates() {
+        waveformUpdateRunnable?.let { handler.removeCallbacks(it) }
+        waveformUpdateRunnable = null
+    }
+
     private fun updateUIState() {
         binding.apply {
             // Show/hide recording controls
@@ -294,13 +350,30 @@ class MainActivity : AppCompatActivity() {
             btnPauseResume.text = pauseResumeText
             btnPauseResume.setIconResource(pauseResumeIcon)
 
-            // Update recording status text
-            val statusText = when {
-                isPaused -> getString(R.string.recording_paused)
-                isRecording -> getString(R.string.recording_in_progress)
-                else -> getString(R.string.ready_to_record)
+            // Update recording status
+            val statusText: String
+            val statusIcon: Int
+            val statusIconTint: Int
+            when {
+                isPaused -> {
+                    statusText = getString(R.string.recording_paused)
+                    statusIcon = R.drawable.ic_status_pause
+                    statusIconTint = ContextCompat.getColor(this@MainActivity, R.color.secondary)
+                }
+                isRecording -> {
+                    statusText = getString(R.string.recording_in_progress)
+                    statusIcon = R.drawable.ic_status_record
+                    statusIconTint = ContextCompat.getColor(this@MainActivity, R.color.error)
+                }
+                else -> {
+                    statusText = getString(R.string.ready_to_record)
+                    statusIcon = R.drawable.ic_status_ready
+                    statusIconTint = ContextCompat.getColor(this@MainActivity, R.color.primary)
+                }
             }
             tvRecordingStatus.text = statusText
+            ivStatusIndicator.setImageResource(statusIcon)
+            ivStatusIndicator.setColorFilter(statusIconTint)
         }
     }
 
@@ -314,13 +387,13 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        // Update UI state when returning to the app
         updateUIFromServiceState()
     }
 
     override fun onDestroy() {
         super.onDestroy()
         stopTimer()
+        stopWaveformUpdates()
         if (isServiceBound) {
             unbindService(serviceConnection)
             isServiceBound = false
