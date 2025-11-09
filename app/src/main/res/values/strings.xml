@@ -67,6 +67,7 @@
     <string name="sort_by_date_oldest">Date (Oldest First)</string>
     <string name="sort_by_name">Name (A-Z)</string>
     <string name="sort_by_duration">Duration</string>
+    <string name="recording_time">Recording Time</string>
 
     <!-- Empty state -->
 

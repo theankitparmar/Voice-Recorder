@@ -236,7 +236,7 @@ class MainActivity : AppCompatActivity() {
 
         handler.postDelayed({
             updateUIFromServiceState()
-            binding.waveformView.recreate() // Clear previous data
+            binding.waveformView.clearWaveform() // Clear previous data
             binding.waveformView.setScrollingMode(true) // Enable scrolling with center line
             startWaveformUpdates()
         }, 100)
@@ -266,7 +266,7 @@ class MainActivity : AppCompatActivity() {
                 stopTimer()
                 stopWaveformUpdates()
                 binding.waveformView.setScrollingMode(false) // Disable scrolling
-                binding.waveformView.recreate() // Clear waveform
+                binding.waveformView.clearWaveform() // Clear waveform
                 isRecording = false
                 isPaused = false
                 updateUIState()
@@ -283,7 +283,7 @@ class MainActivity : AppCompatActivity() {
                 stopTimer()
                 stopWaveformUpdates()
                 binding.waveformView.setScrollingMode(false) // Disable scrolling
-                binding.waveformView.recreate() // Clear waveform
+                binding.waveformView.clearWaveform() // Clear waveform
                 isRecording = false
                 isPaused = false
                 updateUIState()

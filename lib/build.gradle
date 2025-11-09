@@ -1,0 +1,39 @@
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+
+android {
+    namespace = "com.masoudss.lib"
+
+    compileSdkVersion = 35 // Changed from compileSdkVersion 35
+    ndkVersion = "21.1.6352462" // Changed from ndkVersion "21.1.6352462"
+
+    defaultConfig {
+        minSdkVersion  23 // Changed from minSdkVersion 23
+        targetSdkVersion  35 // Changed from targetSdkVersion 35
+
+        testInstrumentationRunner = "android.support.test.runner.AndroidJUnitRunner" // Changed from testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled = false // Changed from minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation "androidx.appcompat:appcompat:1.4.2"
+    compileOnly 'com.github.lincollincol:amplituda:2.1.0'
+}
+
+// Ensure this 'repositories' block is removed if it's causing issues
+// as per the previous instruction. If it's still present and commented out,
+// you can safely delete the entire block.
+/*
+repositories {
+    mavenCentral()
+}
+*/

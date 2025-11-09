@@ -86,7 +86,6 @@
             android:layout_height="match_parent"
             android:padding="@dimen/_2sdp">
 
-            <!-- Waveform View -->
             <com.quick.voice.recorder.ui.WaveformView2
                 android:id="@+id/waveformView"
                 android:layout_width="0dp"
@@ -104,6 +103,7 @@
                 app:layout_constraintTop_toTopOf="parent"
                 android:paddingHorizontal="8dp"
                 />
+
 
             <TextView
                 android:id="@+id/tvTimer"
@@ -126,7 +126,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:background="@color/surface_container_high_alpha"
-                android:text="Recording Time"
+                android:text="@string/recording_time"
                 android:textColor="@color/on_surface_variant"
                 android:textSize="14sp"
                 app:layout_constraintEnd_toEndOf="parent"

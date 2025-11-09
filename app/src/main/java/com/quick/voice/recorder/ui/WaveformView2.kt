@@ -3,13 +3,17 @@ package com.quick.voice.recorder.ui
 import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
+import android.util.TypedValue
 import android.view.View
 import androidx.core.content.ContextCompat
-import com.linc.audiowaveform.model.WaveformAlignment
 import com.quick.voice.recorder.R
-import kotlin.collections.isNotEmpty
+import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.sqrt
 
 fun Context.dpToPx(dp: Int): Float = dp * resources.displayMetrics.density
+fun Context.dpToPx(dp: Float): Float = dp * resources.displayMetrics.density
 
 class WaveformView2 @JvmOverloads constructor(
     context: Context,
@@ -17,76 +21,89 @@ class WaveformView2 @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) : View(context, attrs, defStyleAttr) {
 
-    private val LOG_TAG = "WaveformView"
+    private val LOG_TAG = "WaveformView2"
 
     // --- Spike Configuration ---
-    private var spikeWidth: Float = context.dpToPx(3)
-    private var spikePadding: Float = context.dpToPx(2)
-    private var spikeRadius: Float = context.dpToPx(5)
-    private var spikeMinHeight: Float = context.dpToPx(8)
+    private var spikeWidth: Float = context.dpToPx(3f)
+    private var spikePadding: Float = context.dpToPx(2f)
+    private var spikeRadius: Float = context.dpToPx(2f)
+    private var spikeMinHeight: Float = context.dpToPx(4f)
     private var spikeMaxHeight: Float = -1f
+    private var chunkRoundedCorners: Boolean = true
+    private var chunkSoftTransition: Boolean = true
 
-    // --- Gradient Colors (Custom: Pink to Orange) ---
-    private val gradientStartColor = Color.parseColor("#FD1D64") // Pink (starting side)
-    private val gradientEndColor = Color.parseColor("#F5BA62")   // Orange (ending side)
-    private var gradientShader: LinearGradient? = null
+    // --- Colors ---
+    private var chunkColor: Int = Color.parseColor("#FA5E63")
+    private val gradientStartColor = Color.parseColor("#FD1D64")
+    private val gradientEndColor = Color.parseColor("#F5BA62")
+    private var emptyTimelineColor: Int = Color.parseColor("#30FFFFFF")
+    private val centerLineColor = Color.parseColor("#AF3444")
+    private val playedColor: Int = Color.parseColor("#80FFFFFF") // For playback progress
 
-    // --- Primary Color ---
-    private val primaryColor = Color.parseColor("#FA5E63") // Primary Red-Pink
-
-    // --- Colors & Paint ---
+    // --- Paints ---
     private val spikePaint: Paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
     }
 
-    // --- Empty Timeline (right side) ---
-    private var emptyTimelineColor: Int = Color.parseColor("#30FFFFFF")
+    private val playedPaint: Paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+        color = playedColor
+    }
+
     private val emptyTimelinePaint: Paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
     }
-
-    // --- Data Storage ---
-    private val amplitudes: ArrayList<AmplitudeData> = ArrayList()
-    private var maxVisibleSpikes: Int = 0
-
-    // --- Alignment ---
-    private var alignment: WaveformAlignment = WaveformAlignment.CENTER
-
-    // --- Scrolling Support ---
-    private var scrollOffset: Float = 0f
-    private var isScrollingMode: Boolean = false
-
-    // --- Center Recording Line with Gradient ---
-    private var showCenterLine: Boolean = false
-    private val centerLineColor = Color.parseColor("#AF3444") // Base color
-    private var centerLineGradientShader: LinearGradient? = null
 
     private val centerLinePaint: Paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
     }
 
-    // Center line circle paint (with 50% alpha)
     private val centerCirclePaint: Paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.parseColor("#26FD1D40") // 50% alpha
+        color = Color.parseColor("#26FD1D40")
         style = Paint.Style.FILL
     }
 
     // --- Dim Overlay (top & bottom) ---
-    private var showDimOverlay: Boolean = true
     private val dimOverlayPaint: Paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.parseColor("#26000000")
         style = Paint.Style.FILL
     }
-    private var dimOverlayHeight: Float = context.dpToPx(30)
+
+    // --- Data & State ---
+    private val amplitudes: ArrayList<AmplitudeData> = ArrayList()
+    private var maxVisibleSpikes: Int = 0
+    private var scrollOffset: Float = 0f
+    private var isScrollingMode: Boolean = false
+    private var showCenterLine: Boolean = false
+    private var showDimOverlay: Boolean = true
+    private var dimOverlayHeight: Float = context.dpToPx(30f)
 
     // --- Audio Processing ---
     private val maxReportableAmp: Float = 32768.0f
     private var lastUpdateTime: Long = 0L
-    private var smoothingEnabled: Boolean = true
-    private val topBottomPadding: Float = context.dpToPx(8)
-
-    // --- Center Line Position (always center) ---
+    private val topBottomPadding: Float = context.dpToPx(8f)
     private var centerLinePosition: Float = 0.5f
+
+    // --- Playback Support ---
+    private var playbackProgress: Float = 0f // 0.0 to 1.0
+    private var isPlaybackMode: Boolean = false
+
+    // --- Shaders ---
+    private var gradientShader: LinearGradient? = null
+    private var centerLineGradientShader: LinearGradient? = null
+
+    // --- Performance Optimization ---
+    private val renderPath: Path = Path()
+    private var isDataChanged: Boolean = false
+    private val tempRect: RectF = RectF()
+
+    enum class WaveformAlignment {
+        CENTER, BOTTOM, TOP
+    }
+
+    private var alignment: WaveformAlignment = WaveformAlignment.CENTER
+
+    data class AmplitudeData(val height: Float, val timestamp: Long = System.currentTimeMillis())
 
     init {
         attrs?.let { initAttrs(it) } ?: initDefaults()
@@ -95,18 +112,32 @@ class WaveformView2 @JvmOverloads constructor(
 
     private fun initDefaults() {
         emptyTimelinePaint.color = emptyTimelineColor
+        spikePaint.color = chunkColor
     }
 
     private fun initAttrs(attrs: AttributeSet) {
-        val a = context.theme.obtainStyledAttributes(attrs, R.styleable.WaveformView, 0, 0)
+        val a = context.theme.obtainStyledAttributes(attrs, R.styleable.WaveformView2, 0, 0)
         try {
             spikeWidth = a.getDimension(R.styleable.WaveformView2_chunkWidth, spikeWidth)
             spikePadding = a.getDimension(R.styleable.WaveformView2_chunkSpace, spikePadding)
             spikeMinHeight = a.getDimension(R.styleable.WaveformView2_chunkMinHeight, spikeMinHeight)
             spikeMaxHeight = a.getDimension(R.styleable.WaveformView2_chunkMaxHeight, spikeMaxHeight)
+            chunkColor = a.getColor(R.styleable.WaveformView2_chunkColor, chunkColor)
+            chunkRoundedCorners = a.getBoolean(R.styleable.WaveformView2_chunkRoundedCorners, true)
+            chunkSoftTransition = a.getBoolean(R.styleable.WaveformView2_chunkSoftTransition, true)
+
+            val alignValue = a.getInt(R.styleable.WaveformView2_chunkAlignTo, 0)
+            alignment = when (alignValue) {
+                1 -> WaveformAlignment.BOTTOM
+                2 -> WaveformAlignment.TOP
+                else -> WaveformAlignment.CENTER
+            }
+
         } finally {
             a.recycle()
         }
+
+        spikePaint.color = chunkColor
     }
 
     // --- Public Configuration Methods ---
@@ -114,6 +145,16 @@ class WaveformView2 @JvmOverloads constructor(
     fun setScrollingMode(enabled: Boolean) {
         isScrollingMode = enabled
         showCenterLine = enabled
+        invalidate()
+    }
+
+    fun setPlaybackMode(enabled: Boolean) {
+        isPlaybackMode = enabled
+        invalidate()
+    }
+
+    fun setPlaybackProgress(progress: Float) {
+        playbackProgress = progress.coerceIn(0f, 1f)
         invalidate()
     }
 
@@ -126,12 +167,32 @@ class WaveformView2 @JvmOverloads constructor(
         this.spikeWidth = width
         this.spikePadding = padding
         this.spikeRadius = radius
+        isDataChanged = true
         invalidate()
     }
 
-    fun setDimOverlay(enabled: Boolean, height: Float = context.dpToPx(30)) {
+    fun setDimOverlay(enabled: Boolean, height: Float = context.dpToPx(30f)) {
         this.showDimOverlay = enabled
         this.dimOverlayHeight = height
+        invalidate()
+    }
+
+    fun setWaveformData(amplitudes: List<Float>) {
+        this.amplitudes.clear()
+        amplitudes.forEach { amp ->
+            this.amplitudes.add(AmplitudeData(amp))
+        }
+        isDataChanged = true
+        invalidate()
+    }
+
+    fun getAmplitudeData(): List<Float> = amplitudes.map { it.height }
+
+    fun clearWaveform() {
+        amplitudes.clear()
+        scrollOffset = 0f
+        playbackProgress = 0f
+        isDataChanged = true
         invalidate()
     }
 
@@ -145,17 +206,28 @@ class WaveformView2 @JvmOverloads constructor(
 
         try {
             handleNewAmplitude(amplitude)
+            isDataChanged = true
             invalidate()
             lastUpdateTime = System.currentTimeMillis()
         } catch (e: Exception) {
-            android.util.Log.e(LOG_TAG, "Error updating waveform: \${e.message}")
+            android.util.Log.e(LOG_TAG, "Error updating waveform: ${e.message}")
         }
     }
 
-    fun recreate() {
-        amplitudes.clear()
-        scrollOffset = 0f
-        invalidate()
+    fun updateWithSamples(samples: ShortArray) {
+        if (samples.isEmpty()) return
+
+        val rms = calculateRMS(samples)
+        update((rms * maxReportableAmp).toInt())
+    }
+
+    private fun calculateRMS(samples: ShortArray): Float {
+        var sum = 0.0
+        for (sample in samples) {
+            val normalized = sample.toDouble() / Short.MAX_VALUE
+            sum += normalized * normalized
+        }
+        return sqrt(sum / samples.size).toFloat()
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldW: Int, oldH: Int) {
@@ -166,9 +238,9 @@ class WaveformView2 @JvmOverloads constructor(
         }
 
         val totalSpikeWidth = spikeWidth + spikePadding
-        maxVisibleSpikes = (w / totalSpikeWidth).toInt() + 1
+        maxVisibleSpikes = (w / totalSpikeWidth).toInt() + 2 // Add buffer
 
-        // Create vertical gradient shader for waveform (top to bottom: Pink → Orange)
+        // Create vertical gradient shader
         val topY = topBottomPadding + dimOverlayHeight
         val bottomY = h - topBottomPadding - dimOverlayHeight
 
@@ -180,27 +252,28 @@ class WaveformView2 @JvmOverloads constructor(
             Shader.TileMode.CLAMP
         )
 
-        // Create center line gradient shader (50% → 100% → 50% alpha)
+        // Center line gradient
         val centerY = h / 2f
-
-        // Colors with different alpha values
-        val topColor = Color.parseColor("#80AF3444")    // 50% alpha at top
-        val centerColor = Color.parseColor("#FFAF3444") // 100% alpha at center
-        val bottomColor = Color.parseColor("#80AF3444") // 50% alpha at bottom
+        val topColor = Color.parseColor("#80AF3444")
+        val centerColor = Color.parseColor("#FFAF3444")
+        val bottomColor = Color.parseColor("#80AF3444")
 
         centerLineGradientShader = LinearGradient(
             0f, topY,
             0f, bottomY,
             intArrayOf(topColor, centerColor, bottomColor),
-            floatArrayOf(0f, 0.5f, 1f), // Position: top, center, bottom
+            floatArrayOf(0f, 0.5f, 1f),
             Shader.TileMode.CLAMP
         )
+
+        isDataChanged = true
     }
 
     private fun handleNewAmplitude(amplitude: Int) {
         if (amplitude == 0 && amplitudes.isEmpty()) return
 
-        if (amplitudes.size >= maxVisibleSpikes) {
+        // Remove old amplitudes if we exceed visible capacity
+        while (amplitudes.size >= maxVisibleSpikes) {
             amplitudes.removeAt(0)
         }
 
@@ -211,7 +284,8 @@ class WaveformView2 @JvmOverloads constructor(
         val heightRange = spikeMaxHeight - spikeMinHeight
         var spikeHeight = spikeMinHeight + (heightRange * normalizedAmplitude)
 
-        if (smoothingEnabled && amplitudes.isNotEmpty()) {
+        // Apply smoothing if enabled
+        if (chunkSoftTransition && amplitudes.isNotEmpty()) {
             val previousHeight = amplitudes.last().height
             val timeDelta = System.currentTimeMillis() - lastUpdateTime
             val smoothingFactor = (timeDelta / 75f).coerceIn(0f, 1f)
@@ -238,13 +312,15 @@ class WaveformView2 @JvmOverloads constructor(
     }
 
     private fun drawStaticWaveform(canvas: Canvas) {
+        if (amplitudes.isEmpty()) return
+
         val centerY = height / 2f
         val bottomY = height - topBottomPadding
         val topY = topBottomPadding
         val totalSpikeWidth = spikeWidth + spikePadding
 
-        // Apply gradient
-        spikePaint.shader = gradientShader
+        spikePaint.shader = if (isPlaybackMode) null else gradientShader
+        spikePaint.color = if (isPlaybackMode) chunkColor else Color.WHITE
 
         for (i in amplitudes.indices) {
             val x = i * totalSpikeWidth
@@ -265,11 +341,39 @@ class WaveformView2 @JvmOverloads constructor(
                 }
             }
 
-            canvas.drawRoundRect(rect, spikeRadius, spikeRadius, spikePaint)
+            if (chunkRoundedCorners) {
+                canvas.drawRoundRect(rect, spikeRadius, spikeRadius, spikePaint)
+            } else {
+                canvas.drawRect(rect, spikePaint)
+            }
+
+            // Draw playback progress overlay
+            if (isPlaybackMode && playbackProgress > 0) {
+                val progressX = width * playbackProgress
+                if (x + spikeWidth <= progressX) {
+                    // Fully played section
+                    if (chunkRoundedCorners) {
+                        canvas.drawRoundRect(rect, spikeRadius, spikeRadius, playedPaint)
+                    } else {
+                        canvas.drawRect(rect, playedPaint)
+                    }
+                } else if (x < progressX) {
+                    // Partially played spike
+                    tempRect.set(rect)
+                    tempRect.right = min(rect.right, progressX)
+                    if (chunkRoundedCorners) {
+                        canvas.drawRoundRect(tempRect, spikeRadius, spikeRadius, playedPaint)
+                    } else {
+                        canvas.drawRect(tempRect, playedPaint)
+                    }
+                }
+            }
         }
     }
 
     private fun drawScrollingWaveform(canvas: Canvas) {
+        if (amplitudes.isEmpty()) return
+
         val centerY = height / 2f
         val bottomY = height - topBottomPadding - dimOverlayHeight
         val topY = topBottomPadding + dimOverlayHeight
@@ -307,7 +411,11 @@ class WaveformView2 @JvmOverloads constructor(
                 }
             }
 
-            canvas.drawRoundRect(rect, spikeRadius, spikeRadius, spikePaint)
+            if (chunkRoundedCorners) {
+                canvas.drawRoundRect(rect, spikeRadius, spikeRadius, spikePaint)
+            } else {
+                canvas.drawRect(rect, spikePaint)
+            }
         }
     }
 
@@ -318,7 +426,7 @@ class WaveformView2 @JvmOverloads constructor(
         val centerY = height / 2f
         val bottomY = height - topBottomPadding - dimOverlayHeight
         val topY = topBottomPadding + dimOverlayHeight
-        val centerX = width * (centerLinePosition - context.dpToPx(2))
+        val centerX = width * centerLinePosition
         val totalSpikeWidth = spikeWidth + spikePadding
 
         val emptySpikesCount = ((width - centerX) / totalSpikeWidth).toInt()
@@ -326,7 +434,7 @@ class WaveformView2 @JvmOverloads constructor(
         emptyTimelinePaint.color = emptyTimelineColor
 
         for (i in 0 until emptySpikesCount) {
-            val x = centerX + (i * totalSpikeWidth) + totalSpikeWidth
+            val x = centerX + (i * totalSpikeWidth)
 
             if (x > width) break
 
@@ -337,17 +445,19 @@ class WaveformView2 @JvmOverloads constructor(
                     val halfHeight = emptyHeight / 2f
                     RectF(x, centerY - halfHeight, x + spikeWidth, centerY + halfHeight)
                 }
-
                 WaveformAlignment.BOTTOM -> {
                     RectF(x, bottomY - emptyHeight, x + spikeWidth, bottomY)
                 }
-
                 WaveformAlignment.TOP -> {
                     RectF(x, topY, x + spikeWidth, topY + emptyHeight)
                 }
             }
 
-            canvas.drawRoundRect(rect, spikeRadius, spikeRadius, emptyTimelinePaint)
+            if (chunkRoundedCorners) {
+                canvas.drawRoundRect(rect, spikeRadius, spikeRadius, emptyTimelinePaint)
+            } else {
+                canvas.drawRect(rect, emptyTimelinePaint)
+            }
         }
     }
 
@@ -355,25 +465,28 @@ class WaveformView2 @JvmOverloads constructor(
      * Draw center recording indicator line with gradient (50% → 100% → 50% alpha)
      */
     private fun drawCenterLine(canvas: Canvas) {
-        val centerX = width / 2f // Always at center
+        val centerX = width / 2f
         val topY = topBottomPadding + dimOverlayHeight
         val bottomY = height - topBottomPadding - dimOverlayHeight
 
         // Apply gradient shader to center line paint
         centerLinePaint.shader = centerLineGradientShader
 
-        // Draw vertical line with gradient and rounded ends
-        val lineWidth = context.dpToPx(3)
+        val lineWidth = context.dpToPx(3f)
         val lineRect = RectF(
             centerX - lineWidth / 2,
             topY,
             centerX + lineWidth / 2,
             bottomY
         )
-        canvas.drawRoundRect(lineRect, lineWidth / 2, lineWidth / 2, centerLinePaint)
 
-        // Draw circles at top and bottom (with 50% alpha)
-        val circleRadius = context.dpToPx(0)
+        if (chunkRoundedCorners) {
+            canvas.drawRoundRect(lineRect, lineWidth / 2, lineWidth / 2, centerLinePaint)
+        } else {
+            canvas.drawRect(lineRect, centerLinePaint)
+        }
+
+        val circleRadius = context.dpToPx(2f)
         canvas.drawCircle(centerX, topY, circleRadius, centerCirclePaint)
         canvas.drawCircle(centerX, bottomY, circleRadius, centerCirclePaint)
     }
@@ -396,9 +509,4 @@ class WaveformView2 @JvmOverloads constructor(
         canvas.drawRect(bottomRect, dimOverlayPaint)
     }
 
-    data class AmplitudeData(val height: Float)
-
-    enum class WaveformAlignment {
-        CENTER, BOTTOM, TOP
-    }
 }

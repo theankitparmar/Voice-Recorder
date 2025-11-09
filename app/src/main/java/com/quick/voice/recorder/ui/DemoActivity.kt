@@ -114,7 +114,7 @@ class DemoActivity : AppCompatActivity() {
             recordingStartTime = System.currentTimeMillis()
             recordingDuration = 0L
 
-            binding.waveformView.recreate()
+            binding.waveformView.clearWaveform()
 
             startWaveformUpdates()
             startTimer()
@@ -185,7 +185,7 @@ class DemoActivity : AppCompatActivity() {
             isRecording = false
             isPaused = false
             recordingDuration = 0L
-            binding.waveformView.recreate()
+            binding.waveformView.clearWaveform()
             binding.tvRecordingTime.text = "00:00"
             updateUIState()
 
@@ -264,7 +264,7 @@ class DemoActivity : AppCompatActivity() {
             )
 
             tvStatus.text = when {
-                isPaused -> "⏸️ Recording Paused"
+                isPaused -> "⏸️ ️️ Recording Paused"
                 isRecording -> "🔴 Recording..."
                 else -> "Ready to Record"
             }
