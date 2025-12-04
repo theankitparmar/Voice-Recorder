@@ -59,4 +59,7 @@
     <color name="waveform_center_line">#FA5E63</color>
     <color name="waveform_empty_timeline">#30FFFFFF</color>
     <color name="waveform_dim_overlay">#80000000</color>
+
+    <color name="dmc">#FF6200EE</color>
+    <color name="topcolor">#F5F5F5</color>
 </resources>

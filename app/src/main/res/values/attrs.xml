@@ -47,5 +47,23 @@
         </attr>
         <attr name="chunkSoftTransition" format="boolean" />
     </declare-styleable>
-    </resources>
+
+    <declare-styleable name="AudioRecordView">
+        <attr name="chunkWidthDim" format="dimension" />
+        <attr name="chunkMaxHeightDim" format="dimension" />
+        <attr name="chunkMinHeightDim" format="dimension" />
+        <attr name="chunkSpaceDim" format="dimension" />
+        <attr name="chunkColorDim" format="color" />
+        <attr name="chunkRoundedCornersDim" format="boolean" />
+        <attr name="chunkAlignToDim" format="enum">
+            <enum name="center" value="1" />
+            <enum name="bottom" value="2" />
+        </attr>
+        <attr name="directionDim" format="enum">
+            <enum name="rightToLeft" value="1" />
+            <enum name="leftToRight" value="2" />
+        </attr>
+        <attr name="chunkSoftTransitionDim" format="boolean" />
+    </declare-styleable>
+</resources>
 <!--    </resources>-->
