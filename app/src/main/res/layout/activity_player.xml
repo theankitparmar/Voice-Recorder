@@ -65,15 +65,44 @@
             </com.google.android.material.card.MaterialCardView>
 
             <!-- Audio Visualization Waveform -->
-            <com.quick.voice.recorder.utils.WaveformView
-                android:id="@+id/waveformView"
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardWaveform"
                 android:layout_width="0dp"
-                android:layout_height="60dp"
+                android:layout_height="wrap_content"
                 android:layout_marginTop="32dp"
+                app:cardBackgroundColor="@color/player_card_background"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="4dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/cardAlbumArt"
-                tools:visibility="visible" />
+                app:layout_constraintTop_toBottomOf="@id/cardAlbumArt">
+
+                <com.quick.voice.recorder.demo.WaveformView
+                    android:id="@+id/waveformView"
+                    android:layout_width="match_parent"
+                    android:layout_height="120dp"
+                    android:padding="16dp"
+                    app:chunkAlignToDim="center"
+                    app:chunkMaxHeightDim="90dp"
+                    app:chunkMinHeightDim="8dp"
+                    app:chunkRoundedCornersDim="true"
+                    app:chunkSoftTransitionDim="true"
+                    app:chunkSpaceDim="2dp"
+                    app:chunkWidthDim="3dp"
+                    app:directionDim="leftToRight" />
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Audio Visualization Waveform -->
+            <!--            <com.quick.voice.recorder.utils.WaveformView-->
+            <!--                android:id="@+id/waveformView"-->
+            <!--                android:layout_width="0dp"-->
+            <!--                android:layout_height="60dp"-->
+            <!--                android:layout_marginTop="32dp"-->
+            <!--                app:layout_constraintEnd_toEndOf="parent"-->
+            <!--                app:layout_constraintStart_toStartOf="parent"-->
+            <!--                app:layout_constraintTop_toBottomOf="@id/cardAlbumArt"-->
+            <!--                tools:visibility="visible" />-->
 
             <!-- File Name -->
             <TextView
@@ -87,7 +116,7 @@
                 android:textStyle="bold"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/waveformView"
+                app:layout_constraintTop_toBottomOf="@id/cardWaveform"
                 tools:text="Recording_20231201_143052.m4a" />
 
             <!-- File Info -->
@@ -220,9 +249,9 @@
                         android:layout_width="72dp"
                         android:layout_height="72dp"
                         android:layout_marginHorizontal="16dp"
+                        android:gravity="center"
                         app:icon="@drawable/ic_play"
                         app:iconSize="32dp"
-                        android:gravity="center"
                         app:iconTint="@color/white" />
 
                     <!-- Forward Button -->

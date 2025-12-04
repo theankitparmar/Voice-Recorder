@@ -4,6 +4,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
 import android.os.IBinder
@@ -38,6 +39,7 @@ class PlayerActivity : AppCompatActivity(), PlayerService.PlayerCallback {
     private val handler = Handler(Looper.getMainLooper())
     private var progressRunnable: Runnable? = null
     private var isSeeking = false
+    private var isWaveformLoaded = false
 
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
@@ -67,6 +69,7 @@ class PlayerActivity : AppCompatActivity(), PlayerService.PlayerCallback {
         }
 
         setupUI()
+        setupWaveform()
         bindPlayerService()
         observePlaybackState()
     }
@@ -114,6 +117,46 @@ class PlayerActivity : AppCompatActivity(), PlayerService.PlayerCallback {
         }
 
         updatePlayerUI()
+    }
+
+    private fun setupWaveform() {
+        recording?.let { rec ->
+            // Configure waveform appearance
+            binding.waveformView.apply {
+                // Set beautiful gradient colors
+                setGradientColors(
+                    Color.parseColor("#667eea"), // Purple
+                    Color.parseColor("#764ba2")  // Deep purple
+                )
+
+                // Enable visual effects
+                setGlowEffect(true)
+                setWaveHeightMultiplier(1.2f)
+                setChunkRoundedCorners(true)
+
+                // Load the audio file waveform
+                loadAudioFile(rec.filePath) { success ->
+                    isWaveformLoaded = success
+                    if (success) {
+                        runOnUiThread {
+                            com.google.android.material.snackbar.Snackbar.make(
+                                binding.root,
+                                "Waveform loaded successfully",
+                                com.google.android.material.snackbar.Snackbar.LENGTH_SHORT
+                            ).show()
+                        }
+                    } else {
+                        runOnUiThread {
+                            com.google.android.material.snackbar.Snackbar.make(
+                                binding.root,
+                                "Could not load waveform",
+                                com.google.android.material.snackbar.Snackbar.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private fun bindPlayerService() {
@@ -301,6 +344,7 @@ class PlayerActivity : AppCompatActivity(), PlayerService.PlayerCallback {
     override fun onDestroy() {
         super.onDestroy()
         stopProgressUpdates()
+        binding.waveformView.clearAudioFile() // Clean up waveform resources
         if (isServiceBound) {
             playerService?.removePlayerCallback()
             unbindService(serviceConnection)

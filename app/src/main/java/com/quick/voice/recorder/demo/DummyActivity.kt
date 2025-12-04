@@ -20,12 +20,14 @@ class DummyActivity : AppCompatActivity() {
 
     private lateinit var waveformView: WaveformView
     private lateinit var btnRecord: Button
+    private lateinit var btnLoadAudio: Button
     private lateinit var seekBarHeight: SeekBar
 
     private var mediaRecorder: MediaRecorder? = null
     private var isRecording = false
     private val handler = Handler(Looper.getMainLooper())
     private val refreshRate = 60L
+    private var recordedFilePath: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,14 +35,15 @@ class DummyActivity : AppCompatActivity() {
 
         waveformView = findViewById(R.id.waveformView)
         btnRecord = findViewById(R.id.btnRecord)
+        btnLoadAudio = findViewById(R.id.btnLoadAudio)
         seekBarHeight = findViewById(R.id.seekBarHeight)
 
         // Setup gradient colors
         waveformView.setGradientColors(
-            Color.parseColor("#FD1D64"),
-            Color.parseColor("#F5BA62")
+            Color.parseColor("#FF6B6B"),
+            Color.parseColor("#4ECDC4")
         )
-//        waveformView.setGlowEffect(true)
+        waveformView.setGlowEffect(true)
 
         btnRecord.setOnClickListener {
             if (checkPermissions()) {
@@ -52,8 +55,16 @@ class DummyActivity : AppCompatActivity() {
             }
         }
 
+        btnLoadAudio.setOnClickListener {
+            recordedFilePath?.let { path ->
+                loadAudioFile(path)
+            } ?: run {
+                Toast.makeText(this, "No recorded file available", Toast.LENGTH_SHORT).show()
+            }
+        }
+
         // Height adjustment control
-        seekBarHeight.max = 200
+        seekBarHeight.max = 150
         seekBarHeight.progress = 100
         seekBarHeight.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
@@ -85,12 +96,17 @@ class DummyActivity : AppCompatActivity() {
 
     private fun startRecording() {
         try {
-            val audioFile = File(cacheDir, "demo_audio.mp3")
+            waveformView.recreate() // Clear any previous audio file data
+
+            val audioFile = File(filesDir, "recording_${System.currentTimeMillis()}.mp3")
+            recordedFilePath = audioFile.absolutePath
 
             mediaRecorder = MediaRecorder().apply {
                 setAudioSource(MediaRecorder.AudioSource.MIC)
                 setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
                 setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+                setAudioEncodingBitRate(320000)
+                setAudioSamplingRate(48000)
                 setOutputFile(audioFile.absolutePath)
                 prepare()
                 start()
@@ -98,6 +114,7 @@ class DummyActivity : AppCompatActivity() {
 
             isRecording = true
             btnRecord.text = getString(R.string.stop_recording)
+            btnLoadAudio.isEnabled = false
             animateWaveform()
 
         } catch (e: Exception) {
@@ -115,8 +132,10 @@ class DummyActivity : AppCompatActivity() {
             mediaRecorder = null
             isRecording = false
             btnRecord.text = getString(R.string.start_recording)
+            btnLoadAudio.isEnabled = true
             handler.removeCallbacksAndMessages(null)
-            waveformView.recreate()
+
+            Toast.makeText(this, "Recording saved. Tap 'Load Audio' to view waveform", Toast.LENGTH_LONG).show()
 
         } catch (e: Exception) {
             e.printStackTrace()
@@ -132,6 +151,20 @@ class DummyActivity : AppCompatActivity() {
                 handler.postDelayed({ animateWaveform() }, refreshRate)
             } catch (e: IllegalStateException) {
                 e.printStackTrace()
+            }
+        }
+    }
+
+    private fun loadAudioFile(filePath: String) {
+        waveformView.clearAudioFile()
+
+        Toast.makeText(this, "Loading waveform...", Toast.LENGTH_SHORT).show()
+
+        waveformView.loadAudioFile(filePath) { success ->
+            if (success) {
+                Toast.makeText(this, "Waveform loaded successfully!", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "Failed to load waveform", Toast.LENGTH_SHORT).show()
             }
         }
     }
